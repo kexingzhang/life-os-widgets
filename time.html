@@ -1,0 +1,32 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TIME · 时光</title><meta name="color-scheme" content="light dark"><style>
+:root{--bg:#fff;--ink:#27333d;--muted:#84909c;--edge:#e9edf0;--rail:#edf1f3}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:transparent;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+html{height:100%}body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 0}.panel{flex:0 0 auto;width:100%;border:1px solid var(--edge);background:var(--bg);border-radius:16px;padding:16px 17px 13px}
+.head,.row,.footer{display:flex;align-items:center;justify-content:space-between;gap:8px}.brand{font-size:12px;font-weight:700;letter-spacing:.06em}.status{font-size:10px;color:var(--muted)}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;background:#8fbca4;box-shadow:0 0 0 3px #8fbca422}
+.time{font-size:34px;letter-spacing:-.035em;line-height:1.1;font-weight:740;margin:15px 0 5px;font-variant-numeric:tabular-nums}.time small{font-size:17px;font-weight:500;color:var(--muted)}.date{font-size:11px;color:var(--muted);margin-bottom:15px}
+.trends{border-top:1px solid var(--edge);padding-top:11px;display:grid;gap:11px}.label{font-size:11px;font-weight:630}.nums{display:flex;gap:8px;align-items:baseline}.detail{font-size:10px;color:var(--muted)}.pct{font-size:11px;min-width:41px;text-align:right;font-weight:720;font-variant-numeric:tabular-nums}
+.rail{height:6px;margin-top:6px;border-radius:99px;background:var(--rail);overflow:hidden}.fill{height:100%;width:0;border-radius:99px;transition:width .75s ease-out}
+#y-fill{background:#7b9cbe}#m-fill{background:#91b1a5}#w-fill{background:#b6a4cf}#d-fill{background:#d3aa9b}
+.footer{color:var(--muted);font-size:9px;padding-top:11px;margin-top:13px;border-top:1px solid var(--edge)}
+@media(max-width:270px){.panel{padding:12px}.time{font-size:29px}.detail{display:none}}
+@media(prefers-color-scheme:dark){:root{--bg:#212328;--ink:#f1f2f3;--muted:#aaaeb7;--edge:#3a3e48;--rail:#343841}}
+</style></head><body><div class="panel">
+<div class="head"><span class="brand"><i class="dot"></i>TIME · 时光</span><span class="status">北京时间 UTC+8</span></div>
+<div class="time"><span id="clock"></span><small id="seconds"></small></div><div class="date" id="date"></div><div class="trends">
+<div><div class="row"><span class="label">年 · Year</span><span class="nums"><span class="detail" id="y-detail"></span><span class="pct" id="y-pct"></span></span></div><div class="rail"><div class="fill" id="y-fill"></div></div></div><div><div class="row"><span class="label">月 · Month</span><span class="nums"><span class="detail" id="m-detail"></span><span class="pct" id="m-pct"></span></span></div><div class="rail"><div class="fill" id="m-fill"></div></div></div><div><div class="row"><span class="label">周 · Week</span><span class="nums"><span class="detail" id="w-detail"></span><span class="pct" id="w-pct"></span></span></div><div class="rail"><div class="fill" id="w-fill"></div></div></div><div><div class="row"><span class="label">日 · Day</span><span class="nums"><span class="detail" id="d-detail"></span><span class="pct" id="d-pct"></span></span></div><div class="rail"><div class="fill" id="d-fill"></div></div></div>
+</div><div class="footer"><span>LIVE · 自然时间进度</span><span>每秒更新</span></div></div><script>
+(function(){
+"use strict";var Z=8*3600000,D=86400000,days=["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
+function el(x){return document.getElementById(x)}function z(n){return String(n).padStart(2,"0")}
+function render(){
+ var now=Date.now(),t=new Date(now+Z),Y=t.getUTCFullYear(),M=t.getUTCMonth(),d=t.getUTCDate(),h=t.getUTCHours(),n=t.getUTCMinutes(),s=t.getUTCSeconds(),wd=t.getUTCDay();
+ function start(y,m,day){return Date.UTC(y,m,day)-Z}
+ var ya=start(Y,0,1),yb=start(Y+1,0,1),ma=start(Y,M,1),mb=start(Y,M+1,1),da=start(Y,M,d),db=da+D,week=(wd+6)%7,wa=da-week*D,wb=wa+7*D;
+ el("clock").textContent=z(h)+":"+z(n);el("seconds").textContent=":"+z(s);
+ el("date").textContent=Y+"年"+(M+1)+"月"+d+"日 · "+days[wd];
+ var a=[["y",ya,yb,"第"+(Math.floor((now-ya)/D)+1)+"/"+Math.round((yb-ya)/D)+"天"],["m",ma,mb,d+"/"+Math.round((mb-ma)/D)+"天"],["w",wa,wb,"第"+(week+1)+"/7天"],["d",da,db,z(h)+":"+z(n)+"/24h"]];
+ a.forEach(function(q){var p=Math.max(0,Math.min(100,(now-q[1])/(q[2]-q[1])*100));el(q[0]+"-fill").style.width=p.toFixed(4)+"%";el(q[0]+"-pct").textContent=p.toFixed(1)+"%";el(q[0]+"-detail").textContent=q[3];});
+}
+render();setInterval(render,1000);document.addEventListener("visibilitychange",function(){if(!document.hidden)render()});
+})();
+</script></body></html>
