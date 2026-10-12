@@ -101,8 +101,13 @@
  * 数据契约示例：{date:"2026-10-12",person:"星宝",rate:0.58,study:0.25,exercise:1,water:0.5}
  * rate: 0 至 1；真实 0% 为 rate:0；没有记录的日期不提供该项。
  * 可按学习、运动和喝水目标完成率等权平均，不含月度减重/支出。
+ *
+ * 数据文件：同目录 ./data.json，格式 {"updated":"2026-10-12T12:00:00+08:00","records":[ ...上述契约对象... ]}
+ * 仅含 date / person / rate(0-1) 及可选 study / exercise / water(0-1 完成率)；
+ * 不得含分钟数、杯数、金额、体重、备注或任何 Notion 链接/ID/凭据。
+ * 读取失败时静默保持“待接入数据”。
  */
-const DATA = [];
+let DATA = [];
 const people = ["星宝", "溪宝"];
 let person = people[0];
 const formatter = new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Shanghai", year:"numeric", month:"2-digit", day:"2-digit"});
@@ -163,6 +168,10 @@ document.querySelectorAll(".switch button").forEach(button=>button.addEventListe
   draw();
 }));
 draw();
+fetch("./data.json?t="+Date.now(),{cache:"no-store"})
+  .then(r=>r.ok?r.json():Promise.reject())
+  .then(j=>{ if(j&&Array.isArray(j.records)){ DATA=j.records; draw(); } })
+  .catch(()=>{});
 setInterval(()=>{ if(shDate(new Date())!==localToday) draw(); },60000);
 </script>
 </body>
