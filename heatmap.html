@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light" />
+<title>LIFE OS · 每日进度热力图</title>
+<style>
+:root{--ink:#26333c;--muted:#8a98a3;--line:#e5e9ed;--base:#f4f6f7;--c1:#dfecef;--c2:#bdd7de;--c3:#96bcc5;--c4:#6e9fa9;--c5:#457c87;--rose:#b68c9a}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:transparent;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif;color:var(--ink)}
+body{padding:0}
+.card{border:1px solid var(--line);border-radius:13px;background:#fff;min-height:282px;padding:15px 17px 14px;box-shadow:0 1px 2px rgba(15,23,42,.02)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.eyebrow{font-size:9px;letter-spacing:.11em;font-weight:700;color:#6d98a4}
+.period{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.heading{margin:6px 0 9px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.heading h2{font-size:17px;letter-spacing:.03em;font-weight:650;margin:0}
+.heading .status{color:var(--muted);font-size:10px;white-space:nowrap}
+.switch{display:flex;gap:5px;margin-bottom:14px}
+.switch button{font:inherit;font-size:11px;font-weight:550;padding:4px 11px;border:1px solid var(--line);border-radius:999px;color:#82909a;background:#fff;cursor:pointer}
+.switch button.active{background:#edf3f5;color:#467b86;border-color:#dce8eb}
+.switch button[data-person="溪宝"].active{background:#f5eef0;color:#ac7e8d;border-color:#ecdee3}
+.grid-outer{display:flex;align-items:stretch;gap:8px;width:100%}
+.dow{flex:0 0 17px;height:138px;display:grid;grid-template-rows:repeat(7,1fr);gap:3px;color:#a1abb1;font-size:9px;align-items:center}
+.heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);grid-template-columns:repeat(13,minmax(0,1fr));gap:4px;flex:1;height:138px;min-width:0}
+.cell{display:block;min-width:0;border-radius:3px;background:var(--base);border:1px solid #edf0f2;cursor:default}
+.cell.future{opacity:.22}
+.cell.missing{background:repeating-linear-gradient(135deg,#f6f7f8 0px,#f6f7f8 5px,#eef1f3 5px,#eef1f3 6px)}
+.cell.lv0{background:#ebeff1}.cell.lv1{background:var(--c1);border-color:var(--c1)}.cell.lv2{background:var(--c2);border-color:var(--c2)}
+.cell.lv3{background:var(--c3);border-color:var(--c3)}.cell.lv4{background:var(--c4);border-color:var(--c4)}.cell.lv5{background:var(--c5);border-color:var(--c5)}
+.cell:focus-visible{outline:2px solid #4c8592;outline-offset:1px}
+.months{margin:7px 0 0 25px;height:14px;display:flex;justify-content:space-between;color:#99a5ac;font-size:10px}
+.bottom{margin-top:13px;padding-top:11px;border-top:1px solid #eef0f2;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bottom .tip{font-size:10px;color:#a0a8ad}.legend{display:flex;align-items:center;gap:4px;font-size:9px;color:#909ca4;white-space:nowrap}
+.swatch{width:10px;height:10px;border-radius:2px;display:inline-block}
+.hint{margin-top:9px;font-size:10px;line-height:1.5;color:#9aa6ac}
+.signal{display:inline-block;width:5px;height:5px;margin-right:5px;border-radius:100%;background:#d9b794;vertical-align:middle}
+@media(max-width:320px){.card{padding:13px 12px}.heat{gap:3px;height:125px}.dow{height:125px}.heading h2{font-size:15px}.legend{gap:3px}.swatch{width:9px;height:9px}}
+</style>
+</head>
+<body>
+<section class="card" aria-label="每日计划完成情况热力图">
+  <div class="top"><span class="eyebrow">● LIFE OS / HEATMAP</span><span class="period" id="period">最近 13 周</span></div>
+  <div class="heading"><h2>每日进度</h2><span class="status" id="status">待接入数据</span></div>
+  <div class="switch" role="tablist">
+    <button class="active" role="tab" aria-selected="true" data-person="星宝">星宝</button>
+    <button role="tab" aria-selected="false" data-person="溪宝">溪宝</button>
+  </div>
+  <div class="grid-outer"><div class="dow"><span>一</span><span></span><span>三</span><span></span><span>五</span><span></span><span>日</span></div><div class="heat" id="heat" role="grid" aria-label="过去13周每日完成情况"></div></div>
+  <div class="months"><span id="m1"></span><span id="m2"></span><span id="m3"></span></div>
+  <div class="bottom"><span class="tip">每日目标完成率</span><div class="legend"><span>低</span><i class="swatch" style="background:var(--c1)"></i><i class="swatch" style="background:var(--c2)"></i><i class="swatch" style="background:var(--c3)"></i><i class="swatch" style="background:var(--c4)"></i><i class="swatch" style="background:var(--c5)"></i><span>高</span></div></div>
+  <div class="hint"><span class="signal"></span><span id="hint">框架已就绪 · 等待 Grok Bot 同步</span></div>
+</section>
+<script>
+/**
+ * Public GitHub Pages display only. Do not commit private LIFE OS records, tokens, or passwords.
+ * Grok Bot can implement an authenticated data interface later.
+ * Supported record format: {date:"2026-10-12",person:"星宝",rate:0.58,study:0.25,exercise:1,water:0.5}
+ * Daily rate: average of min(study,1), min(exercise,1), min(water,1). Exclude monthly weight/spend.
+ * True 0% is rate:0; missing day is absent. DO NOT publish real records in this public file.
+ */
+const DATA = [];
+const people = ["星宝", "溪宝"];
+let person = people[0];
+const fmt = new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Shanghai",year:"numeric",month:"2-digit",day:"2-digit"});
+function shDate(d){const p=Object.fromEntries(fmt.formatToParts(d).filter(x=>x.type!=="literal").map(x=>[x.type,x.value]));return p.year+"-"+p.month+"-"+p.day}
+function midnight(s){return new Date(s+"T00:00:00Z")}
+function keyDate(d){return d.toISOString().slice(0,10)}
+function scoreLevel(n){if(n===0)return 0;if(n<.25)return 1;if(n<.5)return 2;if(n<.75)return 3;if(n<1)return 4;return 5}
+const today = midnight(shDate(new Date()));
+const monday = new Date(today); monday.setUTCDate(monday.getUTCDate()-((monday.getUTCDay()+6)%7)-12*7);
+document.getElementById("period").textContent="近 13 周 · "+shDate(new Date()).slice(0,7).replace("-",".");
+const monthDates=[new Date(monday),new Date(monday),new Date(today)]; monthDates[1].setUTCDate(monthDates[1].getUTCDate()+42);
+monthDates.forEach((d,i)=>document.getElementById("m"+(i+1)).textContent=(d.getUTCMonth()+1)+"月");
+function render(){
+ const heat=document.getElementById("heat");heat.replaceChildren();
+ const all=DATA.filter(x=>x.person===person && typeof x.date==="string");
+ const byDate=new Map(all.map(x=>[x.date,x]));
+ for(let w=0;w<13;w++)for(let day=0;day<7;day++){
+  const d=new Date(monday);d.setUTCDate(d.getUTCDate()+w*7+day);
+  const k=keyDate(d),v=byDate.get(k),el=document.createElement("div");
+  el.className="cell "+(d>today?"future":v && typeof v.rate==="number"?"lv"+scoreLevel(Math.min(1,Math.max(0,v.rate))):"missing");
+  const msg=k+" · "+person+" · "+(d>today?"尚未到来":v&&typeof v.rate==="number"?"完成 "+Math.round(Math.min(1,Math.max(0,v.rate))*100)+"%":"未记录");
+  el.title=msg;el.setAttribute("aria-label",msg);el.setAttribute("role","gridcell");el.tabIndex=0;heat.appendChild(el);
+ }
+ const count=all.filter(x=>x.date<=keyDate(today)&&typeof x.rate==="number").length;
+ document.getElementById("status").textContent=count?("已记录 "+count+" 天"):"待接入数据";
+ document.getElementById("hint").textContent=count?"悬停方格可查看日期及完成率":"框架已就绪 · 等待 Grok Bot 同步";
+}
+document.querySelectorAll(".switch button").forEach(b=>b.addEventListener("click",()=>{
+ person=b.dataset.person;
+ document.querySelectorAll(".switch button").forEach(x=>{x.classList.toggle("active",x===b);x.setAttribute("aria-selected",String(x===b))});
+ render();
+}));
+render();
+</script>
+</body>
+</html>
